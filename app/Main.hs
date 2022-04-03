@@ -1,40 +1,21 @@
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE OverloadedStrings #-}
-
 module Main where
 
+import Cast (Cast (..), ppCast)
 import Data.List (delete, sortOn, unfoldr)
-import Data.Text (Text, intercalate)
 import qualified Data.Text.IO as TIO
-import Fmt
+import Storage (load)
 import System.Random
 
-type Person = Text
-
-data Cast = Cast
-  { host :: Person,
-    participants :: [Person]
-  }
-
-ppCast :: Cast -> Text
-ppCast Cast {host, participants} =
-  fmt $ "Host: " +| host |+ "\nParticipants: " +| intercalate ", " participants |+ "\n"
-
 takeRandom :: RandomGen g => g -> Int -> [a] -> [a]
-takeRandom g n xs = take n $ fst <$> sortOn snd (zip xs randoms)
+takeRandom g n xs = take n $ fst <$> sortOn snd (zip xs rs)
   where
-    randoms :: [Word]
-    randoms = unfoldr (Just . uniform) g
-
-hosts :: [Person]
-hosts = ["Betty", "Freddy"]
-
-people :: [Person]
-people = hosts ++ ["Bippy", "Boppy", "Hoppy", "Hetty"]
+    rs :: [Word]
+    rs = unfoldr (Just . uniform) g
 
 main :: IO ()
 main = do
   gen <- getStdGen
+  (hosts, participants) <- load
   let host = head $ takeRandom gen 1 hosts
-  let ps = takeRandom gen 3 (delete host people)
+  let ps = takeRandom gen 3 (delete host participants)
   TIO.putStr $ ppCast $ Cast host ps
