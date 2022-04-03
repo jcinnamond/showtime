@@ -17,5 +17,5 @@ main = do
   gen <- getStdGen
   (hosts, participants) <- load
   let host = head $ takeRandom gen 1 hosts
-  let ps = takeRandom gen 3 (delete host participants)
+  let ps = takeRandom gen 2 (delete host participants)
   TIO.putStr $ ppCast $ Cast host ps
