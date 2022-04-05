@@ -3,16 +3,17 @@ module Storage
   )
 where
 
+import AppConfig (AppConfig (filepath))
 import Cast (Hosts, Participants)
 import Data.List (partition)
 import Data.Maybe (fromMaybe)
-import Data.Text (Text, isPrefixOf, lines, stripPrefix)
+import Data.Text (Text, isPrefixOf, lines, stripPrefix, unpack)
 import Data.Text.IO (readFile)
 import Prelude hiding (lines, readFile)
 
-load :: IO (Hosts, Participants)
-load = do
-  f <- lines <$> readFile "people"
+load :: AppConfig -> IO (Hosts, Participants)
+load config = do
+  f <- lines <$> readFile (unpack $ filepath config)
   let (hosts, participants) = partition isHost f
   let hosts' = cleanup <$> hosts
   pure (hosts', hosts' ++ participants)

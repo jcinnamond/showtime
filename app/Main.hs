@@ -1,5 +1,6 @@
 module Main where
 
+import AppConfig (AppConfig (participantCount), loadConfig)
 import Cast (Cast (..), ppCast)
 import Data.List (delete, sortOn, unfoldr)
 import qualified Data.Text.IO as TIO
@@ -14,8 +15,9 @@ takeRandom g n xs = take n $ fst <$> sortOn snd (zip xs rs)
 
 main :: IO ()
 main = do
+  config <- loadConfig
   gen <- getStdGen
-  (hosts, participants) <- load
+  (hosts, participants) <- load config
   let host = head $ takeRandom gen 1 hosts
-  let ps = takeRandom gen 2 (delete host participants)
+  let ps = takeRandom gen (participantCount config) (delete host participants)
   TIO.putStr $ ppCast $ Cast host ps

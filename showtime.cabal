@@ -19,8 +19,10 @@ library
     hs-source-dirs:  src
     exposed-modules: Storage
                    , Cast
+                   , AppConfig
     build-depends:   text
                    , fmt
+                   , filepath
 
 executable showtime-exe
     import:         shared-properties
