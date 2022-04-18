@@ -1,5 +1,5 @@
-module AppConfig
-  ( AppConfig (..),
+module AppEnv
+  ( AppEnv (..),
     loadConfig,
   )
 where
@@ -8,15 +8,15 @@ import Data.Text (Text, pack)
 import System.Environment (lookupEnv)
 import System.FilePath ((</>))
 
-data AppConfig = AppConfig
+data AppEnv = AppEnv
   { filepath :: Text,
     participantCount :: Int
   }
 
-loadConfig :: IO AppConfig
+loadConfig :: IO AppEnv
 loadConfig = do
   fp <- defaultFilepath
-  pure $ AppConfig fp 2
+  pure $ AppEnv fp 2
 
 defaultFilepath :: IO Text
 defaultFilepath = do

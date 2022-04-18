@@ -3,7 +3,7 @@ module Storage
   )
 where
 
-import AppConfig (AppConfig (filepath))
+import AppEnv (AppEnv (filepath))
 import Cast (Hosts, Participants)
 import Data.List (partition)
 import Data.Maybe (fromMaybe)
@@ -11,7 +11,7 @@ import Data.Text (Text, isPrefixOf, lines, stripPrefix, unpack)
 import Data.Text.IO (readFile)
 import Prelude hiding (lines, readFile)
 
-load :: AppConfig -> IO (Hosts, Participants)
+load :: AppEnv -> IO (Hosts, Participants)
 load config = do
   f <- lines <$> readFile (unpack $ filepath config)
   let (hosts, participants) = partition isHost f

@@ -1,6 +1,6 @@
 module Main where
 
-import AppConfig (AppConfig (participantCount), loadConfig)
+import AppEnv (AppEnv (participantCount), loadConfig)
 import Cast (Cast (..), ppCast)
 import Data.List (delete, sortOn, unfoldr)
 import qualified Data.Text.IO as TIO
