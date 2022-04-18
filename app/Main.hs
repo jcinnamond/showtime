@@ -1,6 +1,6 @@
 module Main where
 
-import AppEnv (AppEnv (participantCount), loadConfig)
+import AppEnv (AppEnv (participantCount), appEnv)
 import Cast (Cast (..), ppCast)
 import Data.List (delete, sortOn, unfoldr)
 import qualified Data.Text.IO as TIO
@@ -15,7 +15,7 @@ takeRandom g n xs = take n $ fst <$> sortOn snd (zip xs rs)
 
 main :: IO ()
 main = do
-  config <- loadConfig
+  config <- appEnv
   gen <- getStdGen
   (hosts, participants) <- load config
   let host = head $ takeRandom gen 1 hosts

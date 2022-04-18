@@ -23,6 +23,7 @@ library
     build-depends:   text
                    , fmt
                    , filepath
+                   , optparse-applicative
 
 executable showtime-exe
     import:         shared-properties

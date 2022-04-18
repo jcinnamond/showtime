@@ -1,10 +1,11 @@
 module AppEnv
   ( AppEnv (..),
-    loadConfig,
+    appEnv,
   )
 where
 
 import Data.Text (Text, pack)
+import Options.Applicative
 import System.Environment (lookupEnv)
 import System.FilePath ((</>))
 
@@ -13,10 +14,30 @@ data AppEnv = AppEnv
     participantCount :: Int
   }
 
-loadConfig :: IO AppEnv
-loadConfig = do
-  fp <- defaultFilepath
-  pure $ AppEnv fp 2
+options :: Text -> Parser AppEnv
+options path =
+  AppEnv
+    <$> strOption
+      ( long "filepath"
+          <> metavar "TARGET"
+          <> help "Path to the file containing the full cast"
+          <> value path
+      )
+    <*> option
+      auto
+      ( long "participants"
+          <> short 'p'
+          <> metavar "INT"
+          <> help "Number of participants (excluding the host)"
+          <> showDefault
+          <> value 2
+      )
+
+appEnv :: IO AppEnv
+appEnv = do
+  path <- defaultFilepath
+  let opts = info (options path <**> helper) (fullDesc <> progDesc "Pick a random cast")
+  execParser opts
 
 defaultFilepath :: IO Text
 defaultFilepath = do
