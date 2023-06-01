@@ -2,14 +2,16 @@ module Storage (
   load,
   add,
   remove,
+  loadHosts,
+  loadParticipants,
 )
 where
 
 import AppEnv (AppEnv (filepath))
-import Cast (Hosts, Participants, Storeable (marshall))
+import Cast (Host (..), Hosts, Participant (..), Participants, Storeable (marshall, name))
 import Control.Monad (unless)
 import qualified Data.List as L
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
@@ -22,12 +24,24 @@ load env = do
   let hosts' = cleanup <$> hosts
   pure (hosts', hosts' ++ participants)
 
+loadHosts :: AppEnv -> IO [Host]
+loadHosts env = do
+  hosts <- mapMaybe (T.stripPrefix "host ") <$> readFile env
+  pure $ Host <$> hosts
+
+loadParticipants :: AppEnv -> IO [Participant]
+loadParticipants env = do
+  participants <- filter (not . T.isPrefixOf "host ") <$> readFile env
+  pure $ Participant <$> participants
+
 add :: (Storeable a) => AppEnv -> a -> IO ()
 add env x = do
   contents <- readFile env
-  let content = marshall x
-  unless (content `elem` contents) $
-    TIO.appendFile (T.unpack $ filepath env) (content <> "\n")
+  unless (name x `existsIn` contents) $
+    TIO.appendFile (T.unpack $ filepath env) (marshall x <> "\n")
+ where
+  existsIn :: Text -> [Text] -> Bool
+  existsIn p ps = (p `elem` ps) || ("host " <> p `elem` ps)
 
 remove :: (Storeable a) => AppEnv -> a -> IO ()
 remove env x = do
