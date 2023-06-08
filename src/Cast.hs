@@ -1,54 +1,52 @@
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
 module Cast (
   Cast (..),
-  Hosts,
-  Participants,
-  Person,
   Host (..),
   Participant (..),
   ppCast,
-  Storeable (..),
 )
 where
 
 import Data.Text (Text, intercalate)
 import qualified Data.Text as T
 import Fmt (fmt, (+|), (|+))
-
-class Storeable x where
-  marshall :: x -> Text
-  name :: x -> Text
+import Storage (Storeable (..))
 
 newtype Host = Host {getHost :: Text}
+  deriving stock (Eq)
+
+hostPrefix :: Text
+hostPrefix = "host "
 
 instance Storeable Host where
-  marshall h = "host " <> getHost h
+  marshall h = hostPrefix <> getHost h
+  unmarshall t = Host <$> T.stripPrefix hostPrefix t
   name = getHost
 
 instance Show Host where
   show h = T.unpack $ getHost h
 
 newtype Participant = Participant {getParticipant :: Text}
+  deriving stock (Eq)
 
 instance Storeable Participant where
   marshall = getParticipant
+  unmarshall t = Participant <$> withoutHostPrefix t
   name = getParticipant
+
+withoutHostPrefix :: Text -> Maybe Text
+withoutHostPrefix x = if T.isPrefixOf hostPrefix x then Nothing else Just x
 
 instance Show Participant where
   show = T.unpack . getParticipant
 
-type Person = Text
-
-type Hosts = [Person]
-
-type Participants = [Person]
-
 data Cast = Cast
-  { castHost :: Person
-  , castParticipants :: [Person]
+  { castHost :: Host
+  , castParticipants :: [Participant]
   }
 
 ppCast :: Cast -> Text
 ppCast Cast{castHost, castParticipants} =
-  fmt $ "Host: " +| castHost |+ "\nParticipants: " +| intercalate ", " castParticipants |+ "\n"
+  fmt $ "Host: " +| getHost castHost |+ "\nParticipants: " +| intercalate ", " (map getParticipant castParticipants) |+ "\n"

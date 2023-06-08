@@ -19,6 +19,7 @@ library
     hs-source-dirs:  src
     exposed-modules: Storage
                    , Cast
+                   , CastStorage
                    , AppEnv
     build-depends:   text
                    , fmt
