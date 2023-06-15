@@ -6,7 +6,6 @@ module Storage (
 )
 where
 
-import AppEnv (AppEnv (filepath))
 import qualified Data.List as L
 import Data.Maybe (mapMaybe)
 import Data.Text (Text)
@@ -17,19 +16,18 @@ import Prelude hiding (appendFile, lines, readFile)
 class Storeable x where
   marshall :: x -> Text
   unmarshall :: Text -> Maybe x
-  name :: x -> Text
 
-load :: (Storeable s) => AppEnv -> IO [s]
-load env = mapMaybe unmarshall <$> readFile env
+load :: (Storeable s) => FilePath -> IO [s]
+load path = mapMaybe unmarshall <$> readFile path
 
-add :: (Storeable a) => AppEnv -> a -> IO ()
-add env x = TIO.appendFile (T.unpack $ filepath env) (marshall x <> "\n")
+add :: (Storeable a) => FilePath -> a -> IO ()
+add path x = TIO.appendFile path (marshall x <> "\n")
 
-remove :: (Storeable a) => AppEnv -> a -> IO ()
-remove env x = do
-  contents <- readFile env
+remove :: (Storeable a) => FilePath -> a -> IO ()
+remove path x = do
+  contents <- readFile path
   let contents' = L.delete (marshall x) contents
-  TIO.writeFile (T.unpack $ filepath env) (T.unlines contents')
+  TIO.writeFile path (T.unlines contents')
 
-readFile :: AppEnv -> IO [Text]
-readFile env = T.lines <$> TIO.readFile (T.unpack $ filepath env)
+readFile :: FilePath -> IO [Text]
+readFile path = T.lines <$> TIO.readFile path

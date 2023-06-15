@@ -1,6 +1,3 @@
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE NamedFieldPuns #-}
-
 module Cast (
   Cast (..),
   Host (..),
@@ -23,7 +20,6 @@ hostPrefix = "host "
 instance Storeable Host where
   marshall h = hostPrefix <> getHost h
   unmarshall t = Host <$> T.stripPrefix hostPrefix t
-  name = getHost
 
 instance Show Host where
   show h = T.unpack $ getHost h
@@ -34,7 +30,6 @@ newtype Participant = Participant {getParticipant :: Text}
 instance Storeable Participant where
   marshall = getParticipant
   unmarshall t = Participant <$> withoutHostPrefix t
-  name = getParticipant
 
 withoutHostPrefix :: Text -> Maybe Text
 withoutHostPrefix x = if T.isPrefixOf hostPrefix x then Nothing else Just x

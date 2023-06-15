@@ -8,6 +8,7 @@ import Data.List (sortOn, unfoldr)
 import qualified Data.Text.IO as TIO
 import System.Environment (getArgs)
 import System.Random
+import qualified Topics.Commands as TopicCommands
 
 main :: IO ()
 main = do
@@ -21,6 +22,7 @@ run env cs = go cs
   go :: [String] -> IO ()
   go ("hosts" : subCommands) = runHosts env subCommands
   go ("participants" : subCommands) = runParticipants env subCommands
+  go ("topics" : subCommands) = TopicCommands.run env subCommands
   go ["list"] = runList env
   go stuff = error $ "unexpected command: " <> show stuff
 

@@ -1,26 +1,40 @@
-module AppEnv
-  ( AppEnv (..),
-    loadConfig,
-  )
+module AppEnv (
+  AppEnv (..),
+  loadConfig,
+)
 where
 
-import Data.Text (Text, pack)
+import System.Directory (createDirectoryIfMissing)
 import System.Environment (lookupEnv)
 import System.FilePath ((</>))
+import System.IO (IOMode (AppendMode), hClose, openFile)
 
 data AppEnv = AppEnv
-  { filepath :: Text,
-    participantCount :: Int
+  { peopleFilepath :: FilePath
+  , topicsFilepath :: FilePath
+  , participantCount :: Int
   }
 
 loadConfig :: IO AppEnv
 loadConfig = do
-  fp <- defaultFilepath
-  pure $ AppEnv fp 2
+  pp <- getFilepath "people"
+  tp <- getFilepath "topics"
+  pure $ AppEnv pp tp 2
 
-defaultFilepath :: IO Text
-defaultFilepath = do
-  e <- lookupEnv "XDG_CONFIG_HOME"
+getFilepath :: FilePath -> IO FilePath
+getFilepath f = do
+  dataDir <- dataDirectory
+  createDirectoryIfMissing True dataDir
+  let path = dataDir </> f
+  createFileIfMissing path
+  pure $ dataDir </> f
+
+createFileIfMissing :: FilePath -> IO ()
+createFileIfMissing path = openFile path AppendMode >>= hClose
+
+dataDirectory :: IO FilePath
+dataDirectory = do
+  e <- lookupEnv "HOME"
   pure $ case e of
-    Just path -> pack $ path </> "people"
-    Nothing -> "people"
+    Just path -> path </> ".showtime" </> "data"
+    Nothing -> "."
