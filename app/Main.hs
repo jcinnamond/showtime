@@ -1,9 +1,11 @@
 module Main where
 
-import AppEnv (AppEnv (participantCount), loadConfig)
+import Application (App, AppEnv (participantCount), loadConfig)
 import Cast (Cast (..), Host (..), Participant (..), ppCast)
 import CastStorage (loadCast)
 import qualified CastStorage
+import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Trans.Reader (asks, runReaderT)
 import Data.List (sortOn, unfoldr)
 import qualified Data.Text.IO as TIO
 import System.Environment (getArgs)
@@ -12,57 +14,62 @@ import qualified Topics.Commands as TopicCommands
 
 main :: IO ()
 main = do
-  config <- loadConfig
-  run config =<< getArgs
+  args <- getArgs
+  runReaderT (run args) =<< loadConfig
 
-run :: AppEnv -> [String] -> IO ()
-run env [] = cast env
-run env cs = go cs
+run :: [String] -> App ()
+run [] = cast
+run cs = go cs
  where
-  go :: [String] -> IO ()
-  go ("hosts" : subCommands) = runHosts env subCommands
-  go ("participants" : subCommands) = runParticipants env subCommands
-  go ("topics" : subCommands) = TopicCommands.run env subCommands
-  go ["list"] = runList env
+  go :: [String] -> App ()
+  go ("hosts" : subCommands) = runHosts subCommands
+  go ("participants" : subCommands) = runParticipants subCommands
+  go ("topics" : subCommands) = TopicCommands.run subCommands
+  go ["list"] = runList
   go stuff = error $ "unexpected command: " <> show stuff
 
-runList :: AppEnv -> IO ()
-runList env = do
-  (hosts, participants) <- CastStorage.loadCast env
-  putStrLn "Hosts"
-  mapM_ print hosts
-  putStrLn "Participants"
-  mapM_ print participants
+runList :: App ()
+runList = do
+  (hosts, participants) <- CastStorage.loadCast
+  liftIO $ do
+    putStrLn "Hosts"
+    mapM_ print hosts
+    putStrLn "Participants"
+    mapM_ print participants
 
-runHosts :: AppEnv -> [String] -> IO ()
-runHosts env ["add", name] = runAddHost env name
-runHosts env ["remove", name] = runRemoveHost env name
-runHosts env ["list"] = runListHosts env
-runHosts _ x = error $ "unexpected command: " <> show x
+runHosts :: [String] -> App ()
+runHosts ["add", name] = runAddHost name
+runHosts ["remove", name] = runRemoveHost name
+runHosts ["list"] = runListHosts
+runHosts x = error $ "unexpected command: " <> show x
 
-runAddHost :: AppEnv -> String -> IO ()
+runAddHost :: String -> App ()
 runAddHost = CastStorage.addHost
 
-runRemoveHost :: AppEnv -> String -> IO ()
+runRemoveHost :: String -> App ()
 runRemoveHost = CastStorage.removeHost
 
-runListHosts :: AppEnv -> IO ()
-runListHosts env = CastStorage.loadHosts env >>= mapM_ print
+runListHosts :: App ()
+runListHosts = do
+  hosts <- CastStorage.loadHosts
+  liftIO $ mapM_ print hosts
 
-runParticipants :: AppEnv -> [String] -> IO ()
-runParticipants env ["add", name] = runAddParticipant env name
-runParticipants env ["remove", name] = runRemoveParticipant env name
-runParticipants env ["list"] = runListParticipants env
-runParticipants _ x = error $ "unexpected command: " <> show x
+runParticipants :: [String] -> App ()
+runParticipants ["add", name] = runAddParticipant name
+runParticipants ["remove", name] = runRemoveParticipant name
+runParticipants ["list"] = runListParticipants
+runParticipants x = error $ "unexpected command: " <> show x
 
-runAddParticipant :: AppEnv -> String -> IO ()
+runAddParticipant :: String -> App ()
 runAddParticipant = CastStorage.addParticipant
 
-runRemoveParticipant :: AppEnv -> String -> IO ()
+runRemoveParticipant :: String -> App ()
 runRemoveParticipant = CastStorage.removeParticipant
 
-runListParticipants :: AppEnv -> IO ()
-runListParticipants env = CastStorage.loadParticipants env >>= mapM_ print
+runListParticipants :: App ()
+runListParticipants = do
+  participants <- CastStorage.loadParticipants
+  liftIO $ mapM_ print participants
 
 takeRandom :: (RandomGen g) => g -> Int -> [a] -> [a]
 takeRandom g n xs = take n $ fst <$> sortOn snd (zip xs rs)
@@ -70,12 +77,13 @@ takeRandom g n xs = take n $ fst <$> sortOn snd (zip xs rs)
   rs :: [Word]
   rs = unfoldr (Just . uniform) g
 
-cast :: AppEnv -> IO ()
-cast env = do
+cast :: App ()
+cast = do
+  count <- asks participantCount
   gen <- getStdGen
-  (hosts, participants) <- loadCast env
+  (hosts, participants) <- loadCast
   let host = head $ takeRandom gen 1 hosts
   let everyone = (getHost <$> hosts) <> (getParticipant <$> participants)
   let allParticipants = Participant <$> everyone
-  let ps = takeRandom gen (participantCount env) allParticipants
-  TIO.putStr $ ppCast $ Cast host ps
+  let ps = takeRandom gen count allParticipants
+  liftIO $ TIO.putStr $ ppCast $ Cast host ps

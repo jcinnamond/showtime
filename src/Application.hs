@@ -1,13 +1,17 @@
-module AppEnv (
+module Application (
   AppEnv (..),
+  App,
   loadConfig,
 )
 where
 
+import Control.Monad.Trans.Reader (ReaderT)
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (lookupEnv)
 import System.FilePath ((</>))
 import System.IO (IOMode (AppendMode), hClose, openFile)
+
+type App = ReaderT AppEnv IO
 
 data AppEnv = AppEnv
   { peopleFilepath :: FilePath

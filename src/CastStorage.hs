@@ -9,46 +9,52 @@ module CastStorage (
 )
 where
 
-import AppEnv (AppEnv (peopleFilepath))
+import Application (App, AppEnv (peopleFilepath))
 import Cast (Host (..), Participant (..))
 import Control.Monad (unless)
+import Control.Monad.Trans.Reader (asks)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Storage as S
 
-loadHosts :: AppEnv -> IO [Host]
-loadHosts = S.load . peopleFilepath
+loadHosts :: App [Host]
+loadHosts = S.load =<< asks peopleFilepath
 
-loadParticipants :: AppEnv -> IO [Participant]
-loadParticipants = S.load . peopleFilepath
+loadParticipants :: App [Participant]
+loadParticipants = S.load =<< asks peopleFilepath
 
-loadCast :: AppEnv -> IO ([Host], [Participant])
-loadCast env = do
-  hosts <- loadHosts env
-  participants <- loadParticipants env
+loadCast :: App ([Host], [Participant])
+loadCast = do
+  hosts <- loadHosts
+  participants <- loadParticipants
   pure (hosts, participants)
 
-addHost :: AppEnv -> String -> IO ()
+addHost :: String -> App ()
 addHost = addUnlessExists Host
 
-removeHost :: AppEnv -> String -> IO ()
-removeHost env name = S.remove (peopleFilepath env) (Host $ T.pack name)
+removeHost :: String -> App ()
+removeHost name = do
+  path <- asks peopleFilepath
+  S.remove path (Host $ T.pack name)
 
-addParticipant :: AppEnv -> String -> IO ()
+addParticipant :: String -> App ()
 addParticipant = addUnlessExists Participant
 
-removeParticipant :: AppEnv -> String -> IO ()
-removeParticipant env name = S.remove (peopleFilepath env) (Participant $ T.pack name)
+removeParticipant :: String -> App ()
+removeParticipant name = do
+  path <- asks peopleFilepath
+  S.remove path (Participant $ T.pack name)
 
-addUnlessExists :: (S.Storeable s) => (Text -> s) -> AppEnv -> String -> IO ()
-addUnlessExists storable env strName = do
+addUnlessExists :: (S.Storeable s) => (Text -> s) -> String -> App ()
+addUnlessExists storable strName = do
   let name = T.pack strName
-  exists <- alreadyInCast env name
-  unless exists $ S.add (peopleFilepath env) (storable name)
+  exists <- alreadyInCast name
+  path <- asks peopleFilepath
+  unless exists $ S.add path (storable name)
 
-alreadyInCast :: AppEnv -> Text -> IO Bool
-alreadyInCast env name = do
-  (hosts, participants) <- loadCast env
+alreadyInCast :: Text -> App Bool
+alreadyInCast name = do
+  (hosts, participants) <- loadCast
   pure $
     Participant name `elem` participants
       || Host name `elem` hosts

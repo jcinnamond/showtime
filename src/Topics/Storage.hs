@@ -5,20 +5,23 @@ module Topics.Storage (
 )
 where
 
-import AppEnv (AppEnv (topicsFilepath))
+import Application (App, AppEnv (topicsFilepath))
+import Control.Monad.Trans.Reader (asks)
 import qualified Data.Text as T
 import qualified Storage as S
 import Topics.Topic (Topic (..))
 
-add :: AppEnv -> String -> IO ()
-add env strTopic = do
+add :: String -> App ()
+add strTopic = do
   let topic = T.pack strTopic
-  S.add (topicsFilepath env) (Topic topic)
+  path <- asks topicsFilepath
+  S.add path (Topic topic)
 
-remove :: AppEnv -> String -> IO ()
-remove env strName = do
+remove :: String -> App ()
+remove strName = do
   let name = T.pack strName
-  S.remove (topicsFilepath env) (Topic name)
+  path <- asks topicsFilepath
+  S.remove path (Topic name)
 
-list :: AppEnv -> IO [Topic]
-list = S.load . topicsFilepath
+list :: App [Topic]
+list = S.load =<< asks topicsFilepath

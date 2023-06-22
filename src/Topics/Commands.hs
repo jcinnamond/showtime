@@ -3,25 +3,20 @@ module Topics.Commands (
 )
 where
 
-import AppEnv (AppEnv)
+import Application (App)
 import Control.Monad (forM_)
+import Control.Monad.IO.Class (liftIO)
 import qualified Data.Text as T
 import qualified Topics.Storage as Storage
 import Topics.Topic (Topic (getTopic))
 
-run :: AppEnv -> [String] -> IO ()
-run env ["add", name] = runAdd env name
-run env ["remove", name] = runRemove env name
-run env ["list"] = runList env
-run _ x = error $ "unexpected command: " <> show x
+run :: [String] -> App ()
+run ["add", name] = Storage.add name
+run ["remove", name] = Storage.remove name
+run ["list"] = runList
+run x = error $ "unexpected command: " <> show x
 
-runAdd :: AppEnv -> String -> IO ()
-runAdd = Storage.add
-
-runRemove :: AppEnv -> String -> IO ()
-runRemove = Storage.remove
-
-runList :: AppEnv -> IO ()
-runList env = do
-  topics <- Storage.list env
-  forM_ (T.unpack . getTopic <$> topics) putStrLn
+runList :: App ()
+runList = do
+  topics <- Storage.list
+  liftIO $ forM_ (T.unpack . getTopic <$> topics) putStrLn
