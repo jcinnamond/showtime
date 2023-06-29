@@ -1,4 +1,4 @@
-module CastStorage (
+module Cast.Storage (
   loadCast,
   loadHosts,
   addHost,
@@ -10,7 +10,7 @@ module CastStorage (
 where
 
 import Application (App, AppEnv (peopleFilepath))
-import Cast (Host (..), Participant (..))
+import Cast.Cast (Host (..), Participant (..))
 import Control.Monad (unless)
 import Control.Monad.Trans.Reader (asks)
 import Data.Text (Text)

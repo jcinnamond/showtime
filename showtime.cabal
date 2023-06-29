@@ -18,8 +18,9 @@ library
     import:          shared-properties
     hs-source-dirs:  src
     exposed-modules: Storage
-                   , Cast
-                   , CastStorage
+                   , Cast.Cast
+                   , Cast.Commands
+                   , Cast.Storage
                    , Application
                    , Topics.Commands
                    , Topics.Storage

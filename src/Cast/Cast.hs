@@ -1,4 +1,4 @@
-module Cast (
+module Cast.Cast (
   Cast (..),
   Host (..),
   Participant (..),
