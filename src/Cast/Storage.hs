@@ -1,58 +1,63 @@
-module Cast.Storage (
-  loadCast,
-  loadHosts,
-  addHost,
-  removeHost,
-  loadParticipants,
-  addParticipant,
-  removeParticipant,
-)
+module Cast.Storage
+  ( loadCast,
+    loadHosts,
+    addHost,
+    removeHost,
+    loadParticipants,
+    addParticipant,
+    removeParticipant,
+  )
 where
 
-import Application (App, AppEnv (peopleFilepath))
+import Application (App, AppEnv (storage))
 import Cast.Cast (Host (..), Participant (..))
 import Control.Monad (unless)
+import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Reader (asks)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Storage as S
 
-loadHosts :: App [Host]
-loadHosts = S.load =<< asks peopleFilepath
+loadHosts :: (S.Storage s) => App s [Host]
+loadHosts = do
+  s <- asks storage
+  liftIO $ S.load S.Host s
 
-loadParticipants :: App [Participant]
-loadParticipants = S.load =<< asks peopleFilepath
+loadParticipants :: (S.Storage s) => App s [Participant]
+loadParticipants = do
+  s <- asks storage
+  liftIO $ S.load S.Participant s
 
-loadCast :: App ([Host], [Participant])
+loadCast :: (S.Storage s) => App s ([Host], [Participant])
 loadCast = do
   hosts <- loadHosts
   participants <- loadParticipants
   pure (hosts, participants)
 
-addHost :: String -> App ()
-addHost = addUnlessExists Host
+addHost :: (S.Storage s) => String -> App s ()
+addHost = addUnlessExists S.Host Host
 
-removeHost :: String -> App ()
+removeHost :: (S.Storage s) => String -> App s ()
 removeHost name = do
-  path <- asks peopleFilepath
-  S.remove path (Host $ T.pack name)
+  s <- asks storage
+  liftIO $ S.remove S.Host (Host $ T.pack name) s
 
-addParticipant :: String -> App ()
-addParticipant = addUnlessExists Participant
+addParticipant :: (S.Storage s) => String -> App s ()
+addParticipant = addUnlessExists S.Participant Participant
 
-removeParticipant :: String -> App ()
+removeParticipant :: (S.Storage s) => String -> App s ()
 removeParticipant name = do
-  path <- asks peopleFilepath
-  S.remove path (Participant $ T.pack name)
+  s <- asks storage
+  liftIO $ S.remove S.Participant (Participant $ T.pack name) s
 
-addUnlessExists :: (S.Storeable s) => (Text -> s) -> String -> App ()
-addUnlessExists storable strName = do
+addUnlessExists :: (S.Storeable a, S.Storage s) => S.DataType -> (Text -> a) -> String -> App s ()
+addUnlessExists datatype storable strName = do
   let name = T.pack strName
   exists <- alreadyInCast name
-  path <- asks peopleFilepath
-  unless exists $ S.add path (storable name)
+  s <- asks storage
+  unless exists $ liftIO $ S.add datatype (storable name) s
 
-alreadyInCast :: Text -> App Bool
+alreadyInCast :: (S.Storage s) => Text -> App s Bool
 alreadyInCast name = do
   (hosts, participants) <- loadCast
   pure $

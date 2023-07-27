@@ -1,27 +1,30 @@
-module Topics.Storage (
-  add,
-  remove,
-  list,
-)
+module Topics.Storage
+  ( add,
+    remove,
+    list,
+  )
 where
 
-import Application (App, AppEnv (topicsFilepath))
+import Application (App, AppEnv (storage))
+import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Reader (asks)
 import qualified Data.Text as T
 import qualified Storage as S
 import Topics.Topic (Topic (..))
 
-add :: String -> App ()
+add :: (S.Storage s) => String -> App s ()
 add strTopic = do
   let topic = T.pack strTopic
-  path <- asks topicsFilepath
-  S.add path (Topic topic)
+  s <- asks storage
+  liftIO $ S.add S.Topic (Topic topic) s
 
-remove :: String -> App ()
-remove strName = do
-  let name = T.pack strName
-  path <- asks topicsFilepath
-  S.remove path (Topic name)
+remove :: (S.Storage s) => String -> App s ()
+remove strTopic = do
+  let topic = T.pack strTopic
+  s <- asks storage
+  liftIO $ S.remove S.Topic (Topic topic) s
 
-list :: App [Topic]
-list = S.load =<< asks topicsFilepath
+list :: (S.Storage s) => App s [Topic]
+list = do
+  s <- asks storage
+  liftIO $ S.load S.Topic s

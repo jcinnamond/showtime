@@ -1,44 +1,21 @@
-module Application (
-  AppEnv (..),
-  App,
-  loadConfig,
-)
+{-# LANGUAGE GADTs #-}
+
+module Application
+  ( AppEnv (..),
+    App,
+    makeAppEnv,
+  )
 where
 
 import Control.Monad.Trans.Reader (ReaderT)
-import System.Directory (createDirectoryIfMissing)
-import System.Environment (lookupEnv)
-import System.FilePath ((</>))
-import System.IO (IOMode (AppendMode), hClose, openFile)
+import qualified Storage as S
 
-type App = ReaderT AppEnv IO
+type App s = ReaderT (AppEnv s) IO
 
-data AppEnv = AppEnv
-  { peopleFilepath :: FilePath
-  , topicsFilepath :: FilePath
-  , participantCount :: Int
+data AppEnv s = AppEnv
+  { participantCount :: Int,
+    storage :: s
   }
 
-loadConfig :: IO AppEnv
-loadConfig = do
-  pp <- getFilepath "people"
-  tp <- getFilepath "topics"
-  pure $ AppEnv pp tp 2
-
-getFilepath :: FilePath -> IO FilePath
-getFilepath f = do
-  dataDir <- dataDirectory
-  createDirectoryIfMissing True dataDir
-  let path = dataDir </> f
-  createFileIfMissing path
-  pure $ dataDir </> f
-
-createFileIfMissing :: FilePath -> IO ()
-createFileIfMissing path = openFile path AppendMode >>= hClose
-
-dataDirectory :: IO FilePath
-dataDirectory = do
-  e <- lookupEnv "HOME"
-  pure $ case e of
-    Just path -> path </> ".showtime" </> "data"
-    Nothing -> "."
+makeAppEnv :: (S.Storage s) => s -> AppEnv s
+makeAppEnv = AppEnv 2
