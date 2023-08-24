@@ -2,7 +2,7 @@ module Cast.Cast (
   Cast (..),
   Host (..),
   Participant (..),
-  ppCast,
+  pretty,
 )
 where
 
@@ -41,7 +41,8 @@ data Cast = Cast
   { castHost :: Host
   , castParticipants :: [Participant]
   }
+  deriving stock (Eq, Show)
 
-ppCast :: Cast -> Text
-ppCast Cast{castHost, castParticipants} =
+pretty :: Cast -> Text
+pretty Cast{castHost, castParticipants} =
   fmt $ "Host: " +| getHost castHost |+ "\nParticipants: " +| intercalate ", " (map getParticipant castParticipants) |+ "\n"

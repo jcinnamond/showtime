@@ -7,13 +7,14 @@ where
 
 import Data.Text (Text)
 
-data DataType = Host | Participant | Topic
+data DataType = Host | Participant | Topic | Episode
   deriving (Show, Eq, Ord)
 
 class Storage x where
   load :: (Storeable a) => DataType -> x -> IO [a]
   add :: (Storeable a) => DataType -> a -> x -> IO ()
   remove :: (Storeable a) => DataType -> a -> x -> IO ()
+  truncate :: DataType -> x -> IO ()
 
 class Storeable x where
   marshall :: x -> Text

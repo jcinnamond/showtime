@@ -24,6 +24,9 @@ instance S.Storage MockStorage where
   remove :: (S.Storeable a) => S.DataType -> a -> MockStorage -> IO ()
   remove = undefined
 
+  truncate :: S.DataType -> MockStorage -> IO ()
+  truncate = undefined
+
 mockLoadHosts :: [Text]
 mockLoadHosts = ["host Bob", "host Betty"]
 
